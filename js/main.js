@@ -106,13 +106,33 @@ class Main {
       this.pendingLayout = true;
       return;
     }
-    this.vw = innerWidth;
-    this.vh = innerHeight;
+    const { vw, vh } = this.viewport();
+    this.vw = vw;
+    this.vh = vh;
+    // Size the stage explicitly: position:fixed/100% inherit the same too-short height.
+    Object.assign(this.stage.style, { width: vw + 'px', height: vh + 'px' });
     this.portrait = this.vh > this.vw * 1.05;
     this.d = this.dims();
     this.k = this.folded ? this.d.ko ?? this.d.k : this.d.k;
     this.stage.classList.toggle('fill', this.cfg.size === 'fill');
     this.setFolded(this.folded, true);
+  }
+
+  // Real drawable size. iPadOS Home Screen apps with a translucent status bar draw under it but
+  // still report innerHeight short by the status bar's height, leaving a black strip at the
+  // bottom. When the app is full-width, trust the physical screen size instead.
+  viewport() {
+    let vw = innerWidth;
+    let vh = innerHeight;
+    const a = screen.width;
+    const b = screen.height;
+    const long = Math.max(a, b);
+    const short = Math.min(a, b);
+    const land = vw > vh;
+    const sw = land ? long : short;
+    const sh = land ? short : long;
+    if (Math.abs(vw - sw) <= 2 && vh < sh && sh - vh <= 80) vh = sh;
+    return { vw, vh };
   }
 
   // Display geometry for the current orientation. "fill" makes the inner display the whole iPad

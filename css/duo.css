@@ -35,7 +35,7 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 
-#stage { position: fixed; inset: 0; background: #000; overflow: hidden; }
+#stage { position: fixed; left: 0; top: 0; width: 100vw; height: 100lvh; background: #000; overflow: hidden; }
 
 #device { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
 
