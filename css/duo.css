@@ -35,6 +35,14 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* WebKit bug 301108: installed web apps with a translucent status bar get a viewport that is
+   short by the status bar's height, and nothing is drawn below it, while the page is shorter
+   than the screen. Making the document at least screen-tall makes iPadOS use the full height. */
+@media (display-mode: standalone) {
+  html { min-height: min(100lvh, calc(100% + env(safe-area-inset-top))); }
+  body { min-height: min(100lvh, calc(100vh + env(safe-area-inset-top))); }
+}
+
 #stage { position: fixed; left: 0; top: 0; width: 100vw; height: 100lvh; background: #000; overflow: hidden; }
 
 #device { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
