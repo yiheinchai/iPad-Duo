@@ -1,6 +1,6 @@
 import { h } from '../util.js';
 import { G } from '../icons.js';
-import { tabBar } from './ui.js';
+import { tabBar, glassBtn } from './ui.js';
 import { SONGS } from '../data.js';
 
 const HOME = `<svg viewBox="0 0 24 24"><path d="M4 11 12 4l8 7v9h-5v-6H9v6H4Z" fill="currentColor"/></svg>`;
@@ -48,7 +48,9 @@ export default {
       ],
       () => {}
     );
-    wrap.append(content, mini, bar);
+    wrap.append(content, mini);
+    api.rail.bottom([bar, glassBtn(G.search)]);
+    api.rail.top([glassBtn(`<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="currentColor"/><path d="M4 21c0-4.5 3.6-7 8-7s8 2.5 8 7Z" fill="currentColor"/></svg>`)]);
 
     const fmt = (s) => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
     const cur = () => SONGS[P.idx];

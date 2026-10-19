@@ -53,33 +53,32 @@ export const APPS = {
   magnifier: { name: 'Magnifier', module: generic('magnifier') },
   compass: { name: 'Compass', module: generic('compass') },
   games: { name: 'Games', module: generic('games') },
+  news: { name: 'News', module: generic('news') },
+  siri: { name: 'Siri', module: generic('siri') },
 };
 
 // Strings are app ids, objects are widgets ({w: kind, s: 'S'|'M'}).
+// Page 1 and the Dock match Apple's iPhone Duo Home Screen.
 export const HOME_PAGES = [
   [
     { w: 'weather', s: 'S' },
     { w: 'calendar', s: 'S' },
-    'facetime', 'photos', 'camera', 'mail',
-    'notes', 'reminders', 'clock', 'maps',
-    'tv', 'podcasts', 'appstore', 'health',
+    'facetime', 'calendar', 'photos', 'camera',
+    'mail', 'notes', 'clock', 'maps',
+    'tv', 'news', 'health', 'wallet',
+    'siri', 'settings',
   ],
   [
-    { w: 'photos', s: 'S' },
-    { w: 'batteries', s: 'S' },
-    'wallet', 'settings', 'findmy', 'home',
-    'books', 'fitness', 'files', 'calculator',
-    'weather', 'calendar', 'stocks', 'voicememos',
-  ],
-  [
-    { w: 'music', s: 'M' },
+    'reminders', 'podcasts', 'appstore', 'findmy',
+    'home', 'books', 'fitness', 'files',
+    'calculator', 'weather', 'stocks', 'voicememos',
     'translate', 'shortcuts', 'freeform', 'journal',
     'passwords', 'contacts', 'tips', 'magnifier',
     'compass', 'games',
   ],
 ];
 
-export const DOCK = ['phone', 'messages', 'safari', 'music'];
+export const DOCK = ['phone', 'safari', 'messages', 'music'];
 
 export const TODAY = [
   { w: 'weather', s: 'M' },

@@ -35,7 +35,7 @@ The black border around the "phone" is your secret control surface.
 
 | Gesture | Action |
 |---|---|
-| Two‑finger swipe toward the hinge / away from it | Fold / unfold (follows your fingers) |
+| Two‑finger swipe left→right / right→left (portrait: down / up) | Fold / unfold (follows your fingers) |
 | Double‑tap the black border | Fold / unfold |
 | Triple‑tap the black border | Sleep (Always‑On) / wake |
 | Press and hold the black border (1 s) | **Hidden setup** |

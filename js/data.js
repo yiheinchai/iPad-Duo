@@ -2,8 +2,8 @@
 import { rng } from './util.js';
 
 const CONDS = [
-  { k: 'clear', label: 'Clear', day: '☀️', night: '🌙' },
-  { k: 'mostlyclear', label: 'Mostly Clear', day: '🌤️', night: '🌙' },
+  { k: 'clear', label: 'Sunny', nlabel: 'Clear', day: '☀️', night: '🌙' },
+  { k: 'mostlyclear', label: 'Mostly Sunny', nlabel: 'Mostly Clear', day: '🌤️', night: '🌙' },
   { k: 'partly', label: 'Partly Cloudy', day: '⛅️', night: '☁️' },
   { k: 'cloudy', label: 'Cloudy', day: '☁️', night: '☁️' },
   { k: 'rain', label: 'Rain', day: '🌧️', night: '🌧️' },
@@ -57,7 +57,7 @@ export function weatherData(city = 'Cupertino') {
     now: conv(tempAt(hour)),
     hi: conv(hi),
     lo: conv(lo),
-    cond: cond.label,
+    cond: isNight(hour) && cond.nlabel ? cond.nlabel : cond.label,
     icon: isNight(hour) ? cond.night : cond.day,
     night: isNight(hour),
     kind: cond.k,

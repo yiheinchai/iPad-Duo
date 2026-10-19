@@ -5,41 +5,31 @@
 .win { color: #fff; }
 .win[data-theme='light'] { color: #000; }
 
-/* ---- navigation stack ---- */
+/* ---- navigation stack (controls live in the window rail) ---- */
 .nav { position: absolute; inset: 0; overflow: hidden; }
 .page { position: absolute; inset: 0; background: #000; }
-.page-scroll { position: absolute; inset: 0; padding: 92px 0 calc(40px + var(--kbh)); }
-.navbar {
-  position: absolute; left: 0; right: 0; top: 0; height: 92px;
-  display: flex; align-items: flex-end; justify-content: space-between;
-  padding: 0 16px 8px;
-  pointer-events: none;
+.page-scroll { position: absolute; inset: 0; padding: 50px 0 calc(40px + var(--kbh)); }
+.page.has-ihead .page-scroll { padding-top: 82px; }
+.large-title { font: 700 30px/1.15 var(--display); letter-spacing: 0.1px; padding: 0 20px 14px; }
+.ihead {
+  position: absolute; left: 0; right: 0; top: 0; height: 86px; z-index: 3;
+  display: flex; align-items: center; gap: 12px; padding: 16px 16px 0;
+  background: linear-gradient(#000 70%, rgba(0, 0, 0, 0));
 }
-.navbar::before {
-  content: ''; position: absolute; inset: 0 0 -24px; z-index: -1;
-  background: linear-gradient(#000 0%, rgba(0, 0, 0, 0.82) 55%, transparent);
-  opacity: 0; transition: opacity 0.2s;
+.ihead .rb { width: 50px; height: 50px; flex: none; }
+.ih-t { display: flex; flex-direction: column; min-width: 0; }
+.ih-t b { font: 600 15px/1.2 var(--font); }
+.ih-t span { font-size: 14px; color: rgba(235, 235, 245, 0.6); }
+.ih-r { margin-left: auto; display: flex; gap: 8px; }
+.side-search {
+  position: absolute; left: 16px; right: 16px; bottom: 22px; z-index: 3; height: 50px; border-radius: 25px;
+  display: flex; align-items: center; gap: 10px; padding: 0 18px; color: rgba(235, 235, 245, 0.6); font-size: 17px;
+  background: rgba(255, 255, 255, 0.12);
+  -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: inset 0 0.7px 0 rgba(255, 255, 255, 0.4);
 }
-.page.scrolled .navbar::before { opacity: 1; }
-.navbar > * { pointer-events: auto; }
-.nb-title { position: absolute; left: 90px; right: 90px; bottom: 18px; text-align: center; font: 600 17px var(--font); opacity: 0; transition: opacity 0.2s; pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.page.scrolled .nb-title { opacity: 1; }
-.nb-side { display: flex; gap: 10px; align-items: center; min-width: 44px; }
-.nb-side.right { justify-content: flex-end; margin-right: 46px; }
-.split2 > .side .nb-side.right, .win.split[style*='left: 0px'] .nb-side.right { margin-right: 0; }
-.nb-back, .gbtn {
-  height: 44px; min-width: 44px; border-radius: 22px;
-  display: flex; align-items: center; justify-content: center; gap: 4px;
-  background: rgba(255, 255, 255, 0.13);
-  -webkit-backdrop-filter: blur(16px) saturate(170%); backdrop-filter: blur(16px) saturate(170%);
-  box-shadow: inset 0 0.6px 0 rgba(255, 255, 255, 0.35), 0 4px 14px rgba(0, 0, 0, 0.18);
-  color: #fff; padding: 0 12px; font-size: 17px;
-}
-.nb-back svg { width: 12px; height: 20px; }
-.gbtn svg { width: 20px; height: 20px; }
-.gbtn.blue { background: #0a84ff; }
-.gbtn.text { font-weight: 600; }
-.large-title { font: 700 34px/1.1 var(--display); letter-spacing: 0.2px; padding: 0 20px 10px; }
+.side-search svg { width: 20px; height: 20px; color: #fff; }
+.side-search .mic { margin-left: auto; width: 18px; height: 18px; color: #fff; display: flex; }
 
 /* ---- grouped lists ---- */
 .sec { margin: 0 16px 24px; }
@@ -93,7 +83,7 @@
 
 /* ---- two-column (sidebar) layout on the inner display ---- */
 .split2 { position: absolute; inset: 0; display: flex; }
-.split2 > .side { position: relative; width: 38%; min-width: 300px; border-right: 0.5px solid rgba(84, 84, 88, 0.5); }
+.split2 > .side { position: relative; width: 38%; min-width: 300px; border-right: 0.5px solid rgba(84, 84, 88, 0.55); }
 .split2 > .main { position: relative; flex: 1; }
 .split2 > .side .page, .split2 > .side .nav { background: #000; }
 
@@ -190,7 +180,7 @@
 /* =================================================================== Photos */
 .ph { position: absolute; inset: 0; background: #000; }
 .ph-scroll { position: absolute; inset: 0; padding: 0 0 120px; }
-.ph-head { position: sticky; top: 0; z-index: 3; padding: 50px 66px 12px 20px; background: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0)); display: flex; justify-content: space-between; align-items: flex-end; }
+.ph-head { position: sticky; top: 0; z-index: 3; padding: 40px 20px 12px 20px; background: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0)); display: flex; justify-content: space-between; align-items: flex-end; }
 .ph-head b { font: 700 34px var(--display); }
 .ph-head span { display: block; color: rgba(235, 235, 245, 0.6); font-size: 15px; margin-top: 2px; }
 .ph-grid { display: grid; grid-template-columns: repeat(var(--cols, 3), 1fr); gap: 2px; }
@@ -309,9 +299,13 @@
 .note-row { padding: 12px 18px; border-bottom: 0.5px solid rgba(84, 84, 88, 0.6); }
 .note-row b { display: block; font-size: 17px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .note-row span { color: rgba(235, 235, 245, 0.6); font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
-.note-row.sel { background: #3a3a3c; border-radius: 12px; }
-.note-list { background: #1c1c1e; border-radius: 26px; margin: 0 16px; overflow: hidden; padding: 4px; }
-.note-ed { position: absolute; inset: 0; padding: 100px 26px calc(40px + var(--kbh)); }
+.note-row.sel { background: #e1a90c; border-radius: 18px; border-color: transparent; }
+.note-row.sel span { color: rgba(255, 255, 255, 0.85); }
+.notes-sec { font: 700 20px var(--display); padding: 0 24px 10px; }
+.note-list { margin: 0 14px; }
+.wide-notes .note-row { border-bottom: 0; margin-bottom: 2px; padding: 12px 18px; }
+.note-title { font: 700 30px/1.2 var(--display); margin-bottom: 10px; }
+.note-ed { position: absolute; inset: 0; padding: 56px 34px calc(40px + var(--kbh)); }
 .note-ed .date { text-align: center; color: rgba(235, 235, 245, 0.5); font-size: 13px; margin-bottom: 10px; }
 .note-ed .ff { font-size: 18px; line-height: 1.45; min-height: 60%; }
 .note-ed .ff .ff-caret { background: #ffd60a; }

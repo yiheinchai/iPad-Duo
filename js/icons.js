@@ -69,12 +69,13 @@ const D = {
   },
 
   camera: (u) =>
-    `<defs>${lg('g' + u, [[0, '#F2F2F5'], [1, '#A9A9AF']])}${rg('l' + u, [[0, '#4a5a7a'], [0.55, '#1b2233'], [1, '#0b0e14']], 0.4, 0.4, 0.6)}</defs>${bg(`url(#g${u})`)}
-     <rect x="14" y="30" width="72" height="48" rx="9" fill="#2C2C2E"/>
-     <path d="M36 30 L40 23 Q41 21 43 21 H57 Q59 21 60 23 L64 30Z" fill="#2C2C2E"/>
-     <circle cx="50" cy="54" r="17" fill="#8E8E93"/><circle cx="50" cy="54" r="14" fill="url(#l${u})"/>
-     <circle cx="45" cy="49" r="3.5" fill="#fff" opacity=".35"/>
-     <circle cx="76" cy="38" r="2.5" fill="#FFCC00"/>`,
+    `<defs>${lg('g' + u, [[0, '#E4E4E9'], [0.5, '#B9B9C0'], [1, '#8E8E95']])}${rg('r' + u, [[0, '#56565C'], [0.8, '#2C2C30'], [1, '#141416']], 0.5, 0.35, 0.65)}${rg('l' + u, [[0, '#4D6FA8'], [0.35, '#1E2F55'], [0.75, '#0A0F1D'], [1, '#05070D']], 0.45, 0.4, 0.6)}</defs>${bg(`url(#g${u})`)}
+     <circle cx="50" cy="50" r="33" fill="url(#r${u})"/>
+     <circle cx="50" cy="50" r="33" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="1"/>
+     <circle cx="50" cy="50" r="24" fill="url(#l${u})"/>
+     <circle cx="50" cy="50" r="13" fill="#060a14" opacity=".75"/>
+     <ellipse cx="42" cy="40" rx="8" ry="5" fill="#9fc3ff" opacity=".55" transform="rotate(-35 42 40)"/>
+     <circle cx="60" cy="61" r="3" fill="#7aa2ff" opacity=".45"/>`,
 
   photos: () => {
     const cols = ['#F7A83A', '#F5D33B', '#A5D64F', '#45C79A', '#3FA3E6', '#7A6BDB', '#C46BCB', '#F25A5A'];
@@ -96,35 +97,34 @@ const D = {
        .map((a) => `<line x1="50" y1="50" x2="50" y2="31" transform="rotate(${a} 50 50)"/>`)
        .join('')}</g><circle cx="50" cy="50" r="10" fill="#C9C9CE"/><circle cx="50" cy="50" r="5" fill="#47474b"/>`,
 
-  clock: () => {
+  clock: (u) => {
     let ticks = '';
     for (let i = 0; i < 60; i++) {
       const big = i % 5 === 0;
-      ticks += `<line x1="50" y1="${big ? 13.5 : 13.5}" x2="50" y2="${big ? 18 : 15.5}" stroke="#000" stroke-width="${big ? 1.6 : 0.7}" transform="rotate(${i * 6} 50 50)"/>`;
+      ticks += `<line x1="50" y1="9.5" x2="50" y2="${big ? 15 : 12}" stroke="#1c1c1e" stroke-width="${big ? 1.7 : 0.7}" transform="rotate(${i * 6} 50 50)"/>`;
     }
     let nums = '';
     for (let i = 1; i <= 12; i++) {
       const a = (i / 12) * Math.PI * 2 - Math.PI / 2;
-      nums += `<text x="${50 + Math.cos(a) * 26}" y="${50 + Math.sin(a) * 26 + 3.6}" font-size="10" text-anchor="middle" font-family="-apple-system,system-ui,sans-serif" font-weight="500" fill="#000">${i}</text>`;
+      nums += `<text x="${50 + Math.cos(a) * 30}" y="${50 + Math.sin(a) * 30 + 4}" font-size="11.5" text-anchor="middle" font-family="-apple-system,system-ui,sans-serif" font-weight="500" fill="#1c1c1e">${i}</text>`;
     }
     const d = new Date();
-    const s = d.getSeconds() + d.getMilliseconds() / 1000;
-    const m = d.getMinutes() + s / 60;
+    const sec = d.getSeconds() + d.getMilliseconds() / 1000;
+    const m = d.getMinutes() + sec / 60;
     const hr = (d.getHours() % 12) + m / 60;
-    const anim = (period, now) =>
-      `style="animation: icon-rot ${period}s linear infinite; animation-delay:-${now}s; transform-origin:50px 50px"`;
-    return `${bg('#000')}<circle cx="50" cy="50" r="39" fill="#fff"/>${ticks}${nums}
-     <g ${anim(43200, hr * 3600)}><line x1="50" y1="52" x2="50" y2="31" stroke="#000" stroke-width="3.6" stroke-linecap="round"/></g>
-     <g ${anim(3600, m * 60)}><line x1="50" y1="52" x2="50" y2="19" stroke="#000" stroke-width="2.6" stroke-linecap="round"/></g>
-     <g ${anim(60, s)}><line x1="50" y1="58" x2="50" y2="16" stroke="#FF9500" stroke-width="1.1"/><circle cx="50" cy="50" r="2.2" fill="#FF9500"/></g>
-     <circle cx="50" cy="50" r=".9" fill="#fff"/>`;
+    const anim = (period, now) => `style="animation: icon-rot ${period}s linear infinite; animation-delay:-${now}s; transform-origin:50px 50px"`;
+    return `<defs><linearGradient id="cg${u}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e9e9ee"/></linearGradient></defs>${bg(`url(#cg${u})`)}${ticks}${nums}
+     <g ${anim(43200, hr * 3600)}><line x1="50" y1="53" x2="50" y2="29" stroke="#1c1c1e" stroke-width="4" stroke-linecap="round"/></g>
+     <g ${anim(3600, m * 60)}><line x1="50" y1="53" x2="50" y2="16" stroke="#1c1c1e" stroke-width="2.8" stroke-linecap="round"/></g>
+     <g ${anim(60, sec)}><line x1="50" y1="60" x2="50" y2="13" stroke="#FF9500" stroke-width="1.2"/><circle cx="50" cy="50" r="2.4" fill="#FF9500"/></g>
+     <circle cx="50" cy="50" r="1" fill="#fff"/>`;
   },
 
   calendar: () => {
     const d = new Date();
-    const wd = d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
-    return `${bg('#fff')}<text x="50" y="30" text-anchor="middle" font-size="14" font-weight="600" fill="#FF3B30" font-family="-apple-system,system-ui,sans-serif">${wd}</text>
-     <text x="50" y="80" text-anchor="middle" font-size="52" font-weight="300" fill="#000" letter-spacing="-2" font-family="-apple-system,system-ui,sans-serif">${d.getDate()}</text>`;
+    const wd = d.toLocaleDateString('en-US', { weekday: 'short' });
+    return `${bg('#fff')}<text x="50" y="31" text-anchor="middle" font-size="17" font-weight="500" fill="#FF3B30" font-family="-apple-system,system-ui,sans-serif">${wd}</text>
+     <text x="50" y="80" text-anchor="middle" font-size="50" font-weight="300" fill="#000" letter-spacing="-1.5" font-family="-apple-system,system-ui,sans-serif">${d.getDate()}</text>`;
   },
 
   weather: (u) =>
@@ -208,7 +208,21 @@ const D = {
      <circle cx="50" cy="45" r="7" fill="#fff"/><path d="M45 56 H55 L53 80 H47Z" fill="#fff" stroke="#fff" stroke-width="3" stroke-linejoin="round"/>`,
 
   tv: () =>
-    `${bg('#000')}<text x="50" y="62" font-size="34" text-anchor="middle" fill="#fff" font-weight="600" font-family="-apple-system,system-ui,sans-serif" letter-spacing="-1">tv</text>`,
+    `${bg('#0c0c0e')}<text x="49" y="61" font-size="33" text-anchor="middle" fill="#fff" font-weight="600" font-family="-apple-system,system-ui,sans-serif" letter-spacing="-1">\uF8FFtv</text>`,
+
+  news: () =>
+    `${bg('#fff')}<path d="M22 24 Q22 20 26 20 H44 L78 70 V24 Q78 20 74 20" fill="none"/>
+     <path d="M20 26 Q20 20 26 20 H40 L20 50Z" fill="#FA2D48"/>
+     <path d="M20 58 L50 80 H26 Q20 80 20 74Z" fill="#FA2D48"/>
+     <path d="M30 20 H56 L80 46 V74 Q80 80 74 80 H68 L30 32Z" fill="#FA2D48"/>
+     <path d="M62 20 H74 Q80 20 80 26 V38Z" fill="#FA2D48"/>`,
+
+  siri: (u) =>
+    `<defs>${lg('b' + u, [[0, '#f2f2f6'], [1, '#c9c9cf']])}${rg('o' + u, [[0, '#8e8e96'], [0.45, '#3a3a40'], [1, '#0d0d10']], 0.4, 0.32, 0.7)}${rg('h' + u, [[0, '#ffffff', 0.9], [1, '#ffffff', 0]], 0.5, 0.5, 0.5)}</defs>${bg(`url(#b${u})`)}
+     <circle cx="50" cy="50" r="31" fill="url(#o${u})"/>
+     <path d="M24 58 Q50 76 76 58" fill="none" stroke="#5ac8fa" stroke-width="2" opacity=".55"/>
+     <path d="M26 62 Q50 82 74 62" fill="none" stroke="#ff4fa3" stroke-width="1.6" opacity=".45"/>
+     <ellipse cx="41" cy="36" rx="13" ry="8" fill="url(#h${u})" opacity=".55"/>`,
 
   home: () =>
     `${bg('#fff')}<path d="M50 20 L84 50 H76 V80 H24 V50 H16Z" fill="#FF9F0A" stroke="#FF9F0A" stroke-width="4" stroke-linejoin="round"/>

@@ -1,8 +1,10 @@
 import { h, store, tone } from '../util.js';
 import { G } from '../icons.js';
-import { navStack, glassBtn, searchField, backBtn } from './ui.js';
+import { navStack, glassBtn, searchField } from './ui.js';
 import { CONVERSATIONS, CONTACTS } from '../data.js';
 
+const VIDEO = `<svg viewBox="0 0 24 24"><rect x="2.5" y="6.5" width="13" height="11" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M15.5 10.5 21 7.5v9l-5.5-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`;
+const FILTER = `<svg viewBox="0 0 24 24"><path d="M4 7h16M7 12h10M10 17h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
 const REPLIES = ['haha no way', 'ok 👍', 'send pics!!', 'lol', 'sounds good', 'omg 😂', 'see you soon', 'wait really?'];
 const SEND = `<svg viewBox="0 0 24 24"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
@@ -106,12 +108,12 @@ export default {
       if (wide) {
         mainPane.replaceChildren(el);
         renderList();
+        api.rail.top([glassBtn(VIDEO)]);
       } else {
-        head.append(backBtn(() => nav.pop()));
-        const page = nav.push({ title: '', large: false, content: el });
-        page.querySelector('.navbar').remove();
+        const page = nav.push({ title: '', large: false, content: el, right: [glassBtn(VIDEO)] });
         page._scroller.replaceWith(el);
       }
+      void head;
     };
 
     const listView = () => {
@@ -122,7 +124,7 @@ export default {
         p.addEventListener('click', () => openChat(c));
         return p;
       }));
-      return { title: 'Messages', left: glassBtn('<span style="font-size:17px">Edit</span>', null, '.text'), right: glassBtn(G.compose, null), content: h('div', searchField(api), pinned, listEl) };
+      return { title: 'Messages', subtitle: wide ? convs.length + ' Conversations' : '', large: !wide, left: wide ? glassBtn(FILTER) : null, right: wide ? [glassBtn(G.compose)] : [glassBtn(FILTER), glassBtn(G.compose)], content: h('div', searchField(api), pinned, listEl) };
     };
 
     const layout = () => {
@@ -131,17 +133,18 @@ export default {
       wide = w;
       api.keyboard.close();
       root.replaceChildren();
+      api.rail.top([]);
       const wrap = h('div.msgs');
       root.append(wrap);
       if (wide) {
         const side = h('div.side');
         mainPane = h('div.main');
         wrap.append(h('div.split2', side, mainPane));
-        nav = navStack(side);
+        nav = navStack(side, { inline: true });
         nav.reset(listView());
         openChat(current || convs[0]);
       } else {
-        nav = navStack(wrap);
+        nav = navStack(wrap, { api });
         nav.reset(listView());
         if (current) openChat(current);
       }

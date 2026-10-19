@@ -33,7 +33,7 @@ function guessCarrier() {
 const DEFAULTS = {
   size: 'true',
   color: 'nightsky',
-  wallpaper: 'nightsky',
+  wallpaper: 'duo',
   carrier: guessCarrier(),
   owner: 'Your Name',
   deviceName: 'iPhone',
@@ -80,7 +80,7 @@ class Main {
   async applyWallpaper() {
     let url;
     if (this.cfg.wallpaper === 'custom') url = await idb.get('wallpaper');
-    if (!url) url = makeWallpaper(this.cfg.wallpaper === 'custom' ? 'nightsky' : this.cfg.wallpaper);
+    if (!url) url = makeWallpaper(this.cfg.wallpaper === 'custom' ? 'duo' : this.cfg.wallpaper);
     this.os.setWallpaper(url);
   }
 
@@ -170,8 +170,9 @@ class Main {
         const o = vertical ? x - tf.x0 : y - tf.y0;
         if (!tf.active) {
           if (Math.abs(d) > 14 && Math.abs(d) > Math.abs(o) * 1.2) {
-            const wantClose = !this.folded && d < 0;
-            const wantOpen = this.folded && d > 0;
+            // The left (top, in portrait) half is the cover: sweep it toward the hinge to close.
+            const wantClose = !this.folded && d > 0;
+            const wantOpen = this.folded && d < 0;
             if ((wantClose || wantOpen) && this.folder.begin(wantClose ? 'close' : 'open')) {
               tf.active = true;
               tf.dir = wantClose ? 'close' : 'open';
@@ -185,7 +186,7 @@ class Main {
         e.preventDefault();
         const span = GEO.Wi * 0.5 * this.k;
         const dd = (vertical ? y - tf.y0 : x - tf.x0) / span;
-        const p = tf.dir === 'close' ? clamp(-dd, 0, 1) : clamp(1 - dd, 0, 1);
+        const p = tf.dir === 'close' ? clamp(dd, 0, 1) : clamp(1 + dd, 0, 1);
         tf.samples.push({ t: e.timeStamp, p });
         if (tf.samples.length > 6) tf.samples.shift();
         this.folder.set(p);
@@ -327,7 +328,7 @@ class Main {
       h('p', 'This note shows once. Everything below works on your iPad mini:'),
       h(
         'ul',
-        h('li', h('b', 'Fold / unfold: '), 'swipe two fingers toward the hinge (or away to open). Or double‑tap the black border.'),
+        h('li', h('b', 'Fold / unfold: '), 'swipe two fingers left‑to‑right to close the cover, right‑to‑left to open it. Or double‑tap the black border.'),
         h('li', h('b', 'Sleep / Always‑On: '), 'triple‑tap the black border. Tap the screen to wake.'),
         h('li', h('b', 'Hidden setup: '), 'press and hold the black border for 1 second.'),
         h('li', h('b', 'Home / App Switcher: '), 'swipe up from the bottom edge (pause for the switcher).'),
@@ -454,7 +455,8 @@ class Main {
         ['starwhite', 'Star White'],
       ], (v) => (this.stage.dataset.color = v)),
       select('Wallpaper', 'wallpaper', [
-        ['nightsky', 'Night Sky (default)'],
+        ['duo', 'iPhone Duo (default)'],
+        ['nightsky', 'Night Sky'],
         ['sunset', 'Sunset'],
         ['starwhite', 'Star White'],
         ['custom', 'My photo…'],
@@ -479,7 +481,7 @@ class Main {
       })),
       photoFile,
       h('h3', 'Gestures'),
-      h('p.small', 'Two‑finger swipe toward the centre folds, away unfolds · double‑tap border = fold · triple‑tap border = sleep · keyboard: F fold, L sleep, M message, C call, A AirPods.'),
+      h('p.small', 'Two‑finger swipe left→right folds, right→left unfolds · double‑tap border = fold · triple‑tap border = sleep · keyboard: F fold, L sleep, M message, C call, A AirPods.'),
       btn('Close', () => close(), '.primary.wide')
     );
     const wrap = h('div.panel-wrap', box);

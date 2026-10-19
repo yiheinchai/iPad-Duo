@@ -1,6 +1,7 @@
 import { h } from '../util.js';
 import { makePhoto } from '../wallpaper.js';
 import { G } from '../icons.js';
+import { tabBar, glassBtn } from './ui.js';
 
 // Synthetic library so Photos never looks empty.
 let generated;
@@ -15,11 +16,17 @@ export default {
     const grid = h('div.ph-grid');
     const count = h('span');
     const scroll = h('div.ph-scroll.scroll');
-    const head = h('div.ph-head', h('div', h('b', 'Photos'), count), h('div.gbtn', { html: G.search }));
+    const head = h('div.ph-head', h('div', h('b', 'Photos'), count));
     const colls = h('div.ph-coll');
     scroll.append(head, grid, colls);
     const wrap = h('div.ph', scroll);
     root.append(wrap);
+    const LIB = `<svg viewBox="0 0 24 24"><rect x="6" y="3" width="15" height="13" rx="2.5" fill="currentColor" opacity=".55"/><rect x="3" y="7" width="15" height="13" rx="2.5" fill="currentColor"/><path d="M5 18l4-4 3 3 2-2 4 3" fill="none" stroke="#000" stroke-width="1.4" stroke-linejoin="round"/></svg>`;
+    const COLL = `<svg viewBox="0 0 24 24"><rect x="4" y="9" width="16" height="11" rx="2.5" fill="currentColor"/><path d="M6 6.5h12M8 4h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`;
+    api.rail.bottom([tabBar([{ icon: LIB, label: 'Library' }, { icon: COLL, label: 'Collections' }], (i) => {
+      const t = i === 0 ? grid : colls;
+      scroll.scrollTo({ top: t.offsetTop - 40, behavior: 'smooth' });
+    }), glassBtn(G.search)]);
 
     const render = () => {
       const items = [...(api.os.photos || []), ...library()];

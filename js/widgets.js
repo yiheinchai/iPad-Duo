@@ -64,15 +64,7 @@ const W = {
       { t: 'Gym', time: '6:00 PM', c: '#30D158' },
     ];
     if (s === 'S') {
-      return h(
-        'div.cw',
-        h('div.cw-wd', wd),
-        h('div.cw-day', String(d.getDate())),
-        h(
-          'div.cw-evs',
-          events.map((e) => h('div.cw-ev', { style: { '--c': e.c } }, h('b', e.t), h('span', e.time)))
-        )
-      );
+      return h('div.cw', h('div.cw-wd', wd), h('div.cw-day', String(d.getDate())), h('div.cw-none', 'No Events Today'));
     }
     // Medium: mini month + up next
     const first = new Date(d.getFullYear(), d.getMonth(), 1);
@@ -100,11 +92,12 @@ const W = {
   },
 
   photos(s, os) {
-    const src = os.photoForWidget ? os.photoForWidget() : makePhoto(3);
+    const src = os.photoForWidget ? os.photoForWidget() : makePhoto(3, 900, 1200);
     return h(
       'div.pw',
       { style: { backgroundImage: `url(${src})` } },
-      h('div.pw-cap', h('b', 'On This Day'), h('span', new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ', 2024'))
+      h('div.pw-cap', h('b', 'On This Day'), h('span', new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' }).toUpperCase() + ', 2024')),
+      s === 'XL' ? h('div.pw-play', { html: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5Z"/></svg>' }) : null
     );
   },
 

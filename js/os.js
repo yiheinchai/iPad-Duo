@@ -37,12 +37,8 @@ export class OS {
     this.home = h('div.home');
     this.appsLayer = h('div.apps');
     this.lockEl = h('div.lock');
-    this.status = h(
-      'div.status',
-      h('div.st-time'),
-      h('div.st-carrier'),
-      h('div.st-arc', h('div.st-batt'), h('div.st-wifi', { html: G.wifi }), h('div.st-cell', { html: G.cell }), h('div.st-plane', { html: G.plane }))
-    );
+    // iPhone Duo status bar: the time stacked over one circular indicator, in the right-hand rail.
+    this.status = h('div.status', h('div.st-time'), h('div.st-ring'));
     this.islandEl = h('div.island', h('div.island-cam'), h('div.island-compact'), h('div.island-expanded'));
     this.ccEl = h('div.cc');
     this.bannerEl = h('div.banners');
@@ -92,19 +88,22 @@ export class OS {
     this.W = W;
     this.H = H;
     this.mode = mode;
+    this.portrait = !!portrait;
+    this.R = R;
     const s = this.el;
     s.style.setProperty('--W', W + 'px');
     s.style.setProperty('--H', H + 'px');
-    s.style.setProperty('--R', R + 'px');
+    s.style.setProperty('--R', typeof R === 'number' ? R + 'px' : R);
     s.classList.toggle('inner', mode === 'inner');
     s.classList.toggle('outer', mode === 'outer');
     s.classList.toggle('portrait', !!portrait);
-    const dockW = mode === 'inner' ? (portrait ? 0 : 92) : 84;
-    s.style.setProperty('--dockW', dockW + 'px');
-    const pw = mode === 'inner' && !portrait ? (W - dockW) / 2 : W - dockW;
-    s.style.setProperty('--PW', pw + 'px');
-    this.PW = pw;
-    if (this.strip) requestAnimationFrame(() => (this.strip.scrollLeft = pw * (this.pageIdx ?? 1)));
+    s.classList.toggle('wide', mode === 'inner' && !portrait);
+    const key = mode + (portrait ? 'p' : 'l');
+    if (key !== this.homeKey) {
+      this.homeKey = key;
+      this.buildHome();
+    }
+    requestAnimationFrame(() => this.scrollToSpread(this.spread ?? 1, false));
     this.applyLayout(false);
     if (this.switcherOpen) this.closeSwitcher(false);
     for (const w of this.windows.values()) w.inst?.resize?.();
@@ -119,7 +118,6 @@ export class OS {
     this.lastMinute = key;
     const t = fmtTime(now, this.cfg.h24);
     this.status.querySelector('.st-time').textContent = t;
-    this.status.querySelector('.st-carrier').textContent = this.cfg.carrier;
     this.lockClock.textContent = t;
     this.lockDate.textContent = fmtDate(now);
     this.updateBattery();
@@ -132,53 +130,97 @@ export class OS {
     }
   }
 
+  // Ring = battery, dots along the gap = cellular bars, glyph in the middle = Wi‑Fi.
   updateBattery() {
     const lvl = batteryLevel();
-    const b = this.status.querySelector('.st-batt');
-    const C = 2 * Math.PI * 7.6;
-    b.innerHTML = `<svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7.6" fill="none" stroke="currentColor" stroke-opacity=".3" stroke-width="2.6"/><circle cx="10" cy="10" r="7.6" fill="none" stroke="${lvl <= 0.2 ? '#FF453A' : 'currentColor'}" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="${(C * lvl).toFixed(2)} ${C.toFixed(2)}" transform="rotate(-90 10 10)"/><text x="10" y="13" text-anchor="middle" font-size="8.4" font-weight="700" fill="currentColor" font-family="-apple-system,system-ui,sans-serif">${Math.round(lvl * 100)}</text></svg>`;
+    const S = this.cc;
+    const r = 19.5;
+    const pt = (a) => [22 + r * Math.cos((a * Math.PI) / 180), 22 + r * Math.sin((a * Math.PI) / 180)];
+    const [x1, y1] = pt(125);
+    const [x2, y2] = pt(55);
+    const arc = `M${x1.toFixed(2)} ${y1.toFixed(2)}A${r} ${r} 0 1 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`;
+    const bars = S.airplane ? 0 : S.cell ? 4 : 1;
+    const dots = [65, 77.5, 90, 102.5, 115]
+      .map((a, i) => {
+        const [x, y] = pt(a);
+        return `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="1.55" fill="currentColor" opacity="${i < bars ? 1 : 0.35}"/>`;
+      })
+      .join('');
+    const mid = S.airplane
+      ? `<g transform="translate(13 12) scale(.75)">${G.plane.replace(/<\/?svg[^>]*>/g, '')}</g>`
+      : S.wifi
+      ? `<g transform="translate(12.5 14.2) scale(.79)">${G.wifi.replace(/<\/?svg[^>]*>/g, '')}</g>`
+      : `<text x="22" y="26" text-anchor="middle" font-size="11" font-weight="700" fill="currentColor" font-family="-apple-system,system-ui,sans-serif">5G</text>`;
+    this.status.querySelector('.st-ring').innerHTML = `<svg viewBox="0 0 44 44"><path d="${arc}" fill="none" stroke="currentColor" stroke-opacity=".32" stroke-width="2.6" stroke-linecap="round"/><path d="${arc}" pathLength="100" fill="none" stroke="${lvl <= 0.2 ? '#FF453A' : 'currentColor'}" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="${(lvl * 100).toFixed(1)} 200"/>${dots}${mid}</svg>`;
   }
 
   /* ---------------------------------------------------------------- home */
 
   buildHome() {
+    // Rebuilt per display: the open phone shows two pages side by side, the outer display one.
+    this.home.replaceChildren();
+    if (this.widgetTicks) this.onMinute = this.onMinute.filter((f) => !this.widgetTicks.includes(f));
+    const before = this.onMinute.length;
+    const wide = this.mode === 'inner' && !this.portrait;
+    const [P1, P2] = HOME_PAGES;
+    const grid = (items) => {
+      const g = h('div.grid');
+      items.forEach((it) => g.append(typeof it === 'string' ? this.appIcon(it) : this.widgetCell(it)));
+      return g;
+    };
+    const today = (list) => h('div.today-col.scroll', list.map((w) => widget(w, this)));
+    const panel = (cls, child) => h('div.panel' + cls, child);
     const strip = h('div.strip');
-    strip.append(h('div.panel.today', h('div.today-col.scroll', TODAY.map((w) => widget(w, this)))));
-    HOME_PAGES.forEach((page) => {
-      const grid = h('div.grid');
-      page.forEach((it) => grid.append(typeof it === 'string' ? this.appIcon(it) : widget(it, this)));
-      strip.append(h('div.panel', grid));
-    });
+    if (wide) {
+      const half = Math.ceil(P2.length / 2);
+      strip.append(
+        panel('.snap', today(TODAY.slice(0, 3))),
+        panel('.right', today(TODAY.slice(3))),
+        panel('.snap.xl-page', widget({ w: 'photos', s: 'XL' }, this)),
+        panel('.right', grid(P1)),
+        panel('.snap', grid(P2.slice(0, half))),
+        panel('.right', grid(P2.slice(half)))
+      );
+      this.spreadStarts = [0, 2, 4];
+    } else {
+      strip.append(panel('.snap.right', today(TODAY)), panel('.snap.right', grid(P1)), panel('.snap.right', grid(P2)));
+      this.spreadStarts = [0, 1, 2];
+    }
+    this.widgetTicks = this.onMinute.slice(before);
     this.strip = strip;
-    this.pageIdx = 1;
     const dock = h('div.dock', DOCK.map((id) => this.appIcon(id, true)));
-    this.dots = h('div.page-dots', [0, 1, 2, 3].map((i) => h('i' + (i === 0 ? '.today' : ''))));
-    this.searchPill = h('div.search-pill', { html: `${G.search}<span>Search</span>` });
-    this.searchPill.addEventListener('click', () => this.openSpotlight());
+    this.dots = h('div.page-dots', h('i.on'), h('i'));
+    const search = h('div.home-search', { html: G.search });
+    search.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.openSpotlight();
+    });
+    this.pressable(search);
     const done = h('div.jiggle-done', 'Done');
     done.addEventListener('click', (e) => {
       e.stopPropagation();
       this.setJiggle(false);
     });
-    this.home.append(strip, dock, this.dots, this.searchPill, done);
+    this.home.append(strip, dock, this.dots, search, done);
 
-    let idle;
     strip.addEventListener(
       'scroll',
       () => {
-        this.home.classList.add('scrolling');
-        clearTimeout(idle);
-        idle = setTimeout(() => this.home.classList.remove('scrolling'), 700);
-        this.pageIdx = Math.round(strip.scrollLeft / this.PW);
-        const vis = this.mode === 'inner' && !this.el.classList.contains('portrait') ? 2 : 1;
-        $$('i', this.dots).forEach((d, i) => d.classList.toggle('on', i >= this.pageIdx && i < this.pageIdx + vis));
+        const x = strip.scrollLeft;
+        let best = 0;
+        this.spreadStarts.forEach((idx, i) => {
+          if (Math.abs(strip.children[idx].offsetLeft - x) < Math.abs(strip.children[this.spreadStarts[best]].offsetLeft - x)) best = i;
+        });
+        this.spread = best;
+        this.dots.style.opacity = best === 0 ? '0' : '';
+        $$('i', this.dots).forEach((d, i) => d.classList.toggle('on', i === best - 1));
       },
       { passive: true }
     );
     // Long-press empty space or an icon -> jiggle mode.
     let lp;
     this.home.addEventListener('pointerdown', (e) => {
-      if (e.target.closest('.search-pill,.jiggle-done')) return;
+      if (e.target.closest('.home-search,.jiggle-done')) return;
       clearTimeout(lp);
       const x0 = e.clientX;
       const y0 = e.clientY;
@@ -198,6 +240,20 @@ export class OS {
     this.home.addEventListener('click', (e) => {
       if (this.jiggling && !e.target.closest('.app,.widget')) this.setJiggle(false);
     });
+  }
+
+  scrollToSpread(i, smooth) {
+    if (!this.strip) return;
+    const idx = this.spreadStarts[Math.min(i, this.spreadStarts.length - 1)];
+    const left = this.strip.children[idx].offsetLeft;
+    if (smooth) this.strip.scrollTo({ left, behavior: 'smooth' });
+    else this.strip.scrollLeft = left;
+    this.spread = i;
+  }
+
+  widgetCell(def) {
+    const names = { weather: 'Weather', calendar: 'Calendar', photos: 'Photos', batteries: 'Batteries', music: 'Music', fitness: 'Fitness', reminders: 'Reminders' };
+    return h('div.wcell.w-' + def.s, widget(def, this), h('div.wlabel', names[def.w] || ''));
   }
 
   setJiggle(on) {
@@ -468,6 +524,11 @@ export class OS {
       home: () => os.goHome(),
       notify: (n) => os.banner(n),
       isInner: () => os.mode === 'inner',
+      // Toolbar buttons and tab bars live in a vertical rail on the window's outer edge.
+      rail: {
+        top: (nodes) => w.railTop.replaceChildren(...[].concat(nodes || []).filter(Boolean)),
+        bottom: (nodes) => w.railBot.replaceChildren(...[].concat(nodes || []).filter(Boolean)),
+      },
       setTheme: (t) => {
         w.el.dataset.theme = t;
         os.updateStatusTheme();
@@ -478,7 +539,9 @@ export class OS {
   createWindow(id) {
     const a = APPS[id];
     const content = h('div.win-content');
-    const el = h('div.win', { dataset: { app: id, theme: a.module.theme || 'dark' } }, content);
+    const railTop = h('div.rail-top');
+    const railBot = h('div.rail-bot');
+    const el = h('div.win', { dataset: { app: id, theme: a.module.theme || 'dark' } }, content, h('div.win-rail', railTop, railBot));
     if (a.module.fullBleed || a.module.hideStatus) el.dataset.bleed = '1';
     const dots = h('div.mt-dots', h('i'), h('i'), h('i'));
     dots.addEventListener('click', (e) => {
@@ -493,7 +556,7 @@ export class OS {
       }
     });
     this.appsLayer.append(el);
-    const w = { id, el, content, app: a };
+    const w = { id, el, content, app: a, railTop, railBot };
     this.windows.set(id, w);
     try {
       w.inst = a.module.mount(content, this.api(w)) || {};
@@ -554,10 +617,11 @@ export class OS {
   }
 
   winClip(rect) {
-    const R = parseFloat(this.el.style.getPropertyValue('--R')) || 40;
-    if (rect.side === 'l') return `inset(0px round ${R}px 22px 22px ${R}px)`;
-    if (rect.side === 'r') return `inset(0px round 22px ${R}px ${R}px 22px)`;
-    return `inset(0px round ${R}px)`;
+    const R = this.R ?? 40;
+    const r = (k) => (typeof R === 'number' ? R : parseFloat(R.split(' ')[k] ?? R)) + 'px';
+    if (rect.side === 'l') return `inset(0px round ${r(0)} 22px 22px ${r(3)})`;
+    if (rect.side === 'r') return `inset(0px round 22px ${r(1)} ${r(2)} 22px)`;
+    return `inset(0px round ${typeof R === 'number' ? R + 'px' : R})`;
   }
 
   applyLayout(fireShow = true) {
@@ -569,6 +633,7 @@ export class OS {
         const r = this.winRect(id);
         Object.assign(w.el.style, { display: 'block', left: r.x + 'px', top: r.y + 'px', width: r.w + 'px', height: r.h + 'px', clipPath: this.winClip(r) });
         w.el.classList.toggle('split', !!r.side);
+        w.el.classList.toggle('rail-left', r.side === 'l');
         if (!wasVis && fireShow && !this.locked) w.inst?.show?.();
         w.inst?.resize?.();
       } else {
@@ -929,7 +994,7 @@ export class OS {
     if (!wins.length) {
       // On the Home Screen, a pause opens the App Switcher.
       if (up > 60 && this.recents.length) this.openSwitcher();
-      else if (this.strip && this.pageIdx !== 1) this.strip.scrollTo({ left: this.PW, behavior: 'smooth' });
+      else if (this.strip && this.spread !== 1) this.scrollToSpread(1, true);
       return;
     }
     if (paused && up > this.H * 0.16 && v > -0.6) {
@@ -1201,6 +1266,7 @@ export class OS {
     this.status.classList.toggle('airplane', S.airplane);
     this.el.querySelector('.cc-carrier').textContent = S.airplane ? 'Airplane Mode' : this.cfg.carrier + (S.wifi ? '  ·  Wi‑Fi' : ' 5G');
     this.renderCCMedia();
+    this.updateBattery();
   }
 
   renderCCMedia() {
@@ -1367,7 +1433,7 @@ class Island {
       return;
     }
     const r = act.compact();
-    this.compact.replaceChildren(h('div.ic-top', { html: r.top || '' }), h('div.ic-bot', r.bottom instanceof Node ? r.bottom : { html: r.bottom || '' }));
+    this.compact.replaceChildren(h('div.ic-lead', { html: r.top || '' }), h('div.ic-trail', r.bottom instanceof Node ? r.bottom : { html: r.bottom || '' }));
   }
 
   // Transient alert (AirPods connected, silent mode, Touch ID...)

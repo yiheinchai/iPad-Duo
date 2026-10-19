@@ -44,7 +44,8 @@ const THEMES = {
   },
 };
 
-export function makeWallpaper(name = 'nightsky', size = 1600) {
+export function makeWallpaper(name = 'duo', size = 1600) {
+  if (name === 'duo') return paintDuo(size);
   const t = THEMES[name] || THEMES.nightsky;
   const S = 160;
   const small = document.createElement('canvas');
@@ -108,6 +109,72 @@ export function makeWallpaper(name = 'nightsky', size = 1600) {
   }
   bc.putImageData(img, 0, 0);
   return big.toDataURL('image/jpeg', 0.9);
+}
+
+// iPhone Duo default: dark slate silk with flowing, softly lit folds.
+function paintDuo(S) {
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = S;
+  const c = cv.getContext('2d');
+  const base = c.createLinearGradient(0, 0, S, S);
+  base.addColorStop(0, '#2a3045');
+  base.addColorStop(0.5, '#1c2133');
+  base.addColorStop(1, '#151a29');
+  c.fillStyle = base;
+  c.fillRect(0, 0, S, S);
+  const u = (v) => v * S;
+  // Each fold: a curve; the sheet below it is lit near the crest and falls off into shadow.
+  const folds = [
+    [[-0.1, 0.18], [0.3, -0.05], [0.55, 0.42], [1.1, 0.12], 0.9],
+    [[-0.1, 0.46], [0.35, 0.22], [0.6, 0.7], [1.1, 0.38], 0.75],
+    [[-0.1, 0.7], [0.25, 0.5], [0.7, 0.95], [1.1, 0.62], 0.6],
+    [[0.35, 1.1], [0.55, 0.75], [0.8, 0.95], [1.1, 0.82], 0.45],
+  ];
+  for (const [p0, p1, p2, p3, k] of folds) {
+    const path = new Path2D();
+    path.moveTo(u(p0[0]), u(p0[1]));
+    path.bezierCurveTo(u(p1[0]), u(p1[1]), u(p2[0]), u(p2[1]), u(p3[0]), u(p3[1]));
+    const fill = new Path2D(path);
+    fill.lineTo(u(1.1), u(1.2));
+    fill.lineTo(u(-0.1), u(1.2));
+    fill.closePath();
+    const g = c.createLinearGradient(0, u(Math.min(p0[1], p3[1]) - 0.05), 0, u(Math.max(p0[1], p3[1]) + 0.35));
+    g.addColorStop(0, `rgba(108,121,166,${0.62 * k})`);
+    g.addColorStop(0.4, `rgba(52,60,90,${0.45 * k})`);
+    g.addColorStop(1, 'rgba(14,17,28,0.45)');
+    c.fillStyle = g;
+    c.fill(fill);
+    // soft sheen along the crest
+    c.save();
+    c.lineCap = 'round';
+    c.strokeStyle = `rgba(160,172,215,${0.16 * k})`;
+    c.lineWidth = u(0.05);
+    c.shadowColor = `rgba(150,162,205,${0.3 * k})`;
+    c.shadowBlur = u(0.03);
+    c.stroke(path);
+    // crisp highlight edge
+    c.strokeStyle = `rgba(196,205,236,${0.55 * k})`;
+    c.lineWidth = u(0.0022);
+    c.shadowBlur = u(0.006);
+    c.shadowColor = `rgba(196,205,236,${0.7 * k})`;
+    c.stroke(path);
+    c.restore();
+  }
+  const vg = c.createRadialGradient(u(0.5), u(0.45), u(0.2), u(0.5), u(0.5), u(0.85));
+  vg.addColorStop(0, 'rgba(0,0,0,0)');
+  vg.addColorStop(1, 'rgba(0,0,0,0.35)');
+  c.fillStyle = vg;
+  c.fillRect(0, 0, S, S);
+  const img = c.getImageData(0, 0, S, S);
+  const d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const n = (Math.random() - 0.5) * 5;
+    d[i] += n;
+    d[i + 1] += n;
+    d[i + 2] += n;
+  }
+  c.putImageData(img, 0, 0);
+  return cv.toDataURL('image/jpeg', 0.9);
 }
 
 // Pseudo "photos" for the Photos app / widget when the user hasn't imported real ones.

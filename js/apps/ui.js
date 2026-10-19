@@ -2,19 +2,30 @@
 import { h, tick } from '../util.js';
 import { G } from '../icons.js';
 
-// Navigation stack with large titles, glass back button and edge-swipe back.
-export function navStack(root, { onChange } = {}) {
-  const el = h('div.nav');
+// Navigation stack. On iPhone Duo the back button and toolbar items live in the window's
+// vertical rail (pass `api`); sidebars instead get a compact inline header (`inline: true`).
+export function navStack(root, { onChange, api, inline } = {}) {
+  const el = h('div.nav' + (inline ? '.inline' : ''));
   root.append(el);
   const stack = [];
-  const api = {
+  const useRail = !!api && !inline;
+  const syncRail = () => {
+    if (!useRail) return;
+    const page = stack[stack.length - 1];
+    if (!page) return;
+    api.rail.top([stack.length > 1 ? backBtn(() => nav.pop()) : null, ...[].concat(page._view.right || [])]);
+    if (page._view.bottom !== undefined) api.rail.bottom(page._view.bottom);
+  };
+  const nav = {
     el,
     stack,
     push(view, animated = true) {
-      const page = buildPage(view, stack.length > 0, () => api.pop());
+      const page = buildPage(view, inline);
+      page._view = view;
       el.append(page);
       const prev = stack[stack.length - 1];
       stack.push(page);
+      syncRail();
       if (animated && prev) {
         page.animate([{ transform: 'translateX(100%)' }, { transform: 'none' }], { duration: 420, easing: 'cubic-bezier(.2,.9,.25,1)' });
         prev.animate([{ transform: 'none', filter: 'brightness(1)' }, { transform: 'translateX(-30%)', filter: 'brightness(.7)' }], { duration: 420, easing: 'cubic-bezier(.2,.9,.25,1)', fill: 'forwards' }).finished.then(() => {
@@ -30,6 +41,7 @@ export function navStack(root, { onChange } = {}) {
       const prev = stack[stack.length - 1];
       prev.style.visibility = '';
       prev.getAnimations().forEach((a) => a.cancel());
+      syncRail();
       if (animated) {
         prev.animate([{ transform: 'translateX(-30%)', filter: 'brightness(.7)' }, { transform: 'none', filter: 'brightness(1)' }], { duration: 380, easing: 'cubic-bezier(.2,.9,.25,1)' });
         page.animate([{ transform: 'none' }, { transform: 'translateX(100%)' }], { duration: 380, easing: 'cubic-bezier(.2,.9,.25,1)', fill: 'forwards' }).finished.then(() => page.remove());
@@ -39,7 +51,7 @@ export function navStack(root, { onChange } = {}) {
     reset(view) {
       el.replaceChildren();
       stack.length = 0;
-      return api.push(view, false);
+      return nav.push(view, false);
     },
   };
   // Swipe from the left edge to go back.
@@ -69,6 +81,7 @@ export function navStack(root, { onChange } = {}) {
     if (dx > w * 0.3) {
       stack.pop();
       page.remove();
+      syncRail();
       onChange && onChange(stack.length);
     } else {
       prev.style.visibility = 'hidden';
@@ -76,47 +89,49 @@ export function navStack(root, { onChange } = {}) {
   };
   el.addEventListener('pointerup', end);
   el.addEventListener('pointercancel', end);
-  return api;
+  return nav;
 }
 
-function buildPage(view, canBack, back) {
+function buildPage(view, inline) {
   const scroller = h('div.page-scroll.scroll');
-  const big = view.large !== false ? h('div.large-title', view.title) : null;
-  const bar = h(
-    'div.navbar',
-    canBack ? backBtn(back, view.backLabel) : h('div.nb-side', view.left || null),
-    h('div.nb-title', view.title),
-    h('div.nb-side.right', view.right || null)
-  );
+  const big = view.large !== false && view.title ? h('div.large-title', view.title) : null;
   if (big) scroller.append(big);
   if (view.content) scroller.append(view.content);
-  const page = h('div.page' + (view.cls ? '.' + view.cls : ''), scroller, bar);
-  const sync = () => {
-    const y = scroller.scrollTop;
-    page.classList.toggle('scrolled', !big || y > 38);
-  };
-  scroller.addEventListener('scroll', sync, { passive: true });
-  requestAnimationFrame(sync);
+  const page = h('div.page' + (view.cls ? '.' + view.cls : ''), scroller);
+  if (inline) {
+    page.append(
+      h(
+        'div.ihead',
+        view.left || null,
+        h('div.ih-t', h('b', view.title || ''), view.subtitle ? h('span', view.subtitle) : null),
+        h('div.ih-r', ...[].concat(view.right || []))
+      )
+    );
+    page.classList.add('has-ihead');
+  }
   page._scroller = scroller;
   return page;
 }
 
-export function backBtn(fn, label) {
-  const b = h('div.nb-back', { html: G.back }, label ? h('span', label) : null);
-  b.addEventListener('click', (e) => {
-    e.stopPropagation();
-    fn();
-  });
-  return b;
+const CHEV_L = `<svg viewBox="0 0 24 24"><path d="M14.5 5 7.5 12l7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+export function backBtn(fn) {
+  return glassBtn(CHEV_L, fn);
 }
 
+// Round Liquid Glass button (49 pt), the building block of the rail.
 export function glassBtn(glyph, fn, cls = '') {
-  const b = h('div.gbtn' + cls, { html: glyph });
+  const b = h('div.rb' + cls, { html: glyph });
   b.addEventListener('click', (e) => {
     e.stopPropagation();
     fn && fn();
   });
   return b;
+}
+
+// Several buttons sharing one glass capsule.
+export function rgroup(...btns) {
+  return h('div.rgroup', ...btns);
 }
 
 // Grouped inset list section.
@@ -163,11 +178,10 @@ export function toggle(value, onChange) {
   return t;
 }
 
-// Floating Liquid Glass tab bar.
+// Vertical Liquid Glass tab bar for the rail; the selected tab gets a lens highlight.
 export function tabBar(tabs, onSelect, active = 0) {
-  const bar = h('div.tabbar');
   const items = tabs.map((t, i) => {
-    const it = h('div.tb-item' + (i === active ? '.on' : ''), h('div.tb-ic', { html: t.icon }), h('div.tb-l', t.label));
+    const it = h('div.rb' + (i === active ? '.on' : ''), { html: t.icon, title: t.label });
     it.addEventListener('click', (e) => {
       e.stopPropagation();
       items.forEach((x) => x.classList.remove('on'));
@@ -176,8 +190,7 @@ export function tabBar(tabs, onSelect, active = 0) {
     });
     return it;
   });
-  bar.append(...items);
-  return bar;
+  return h('div.rgroup.vtabs', ...items);
 }
 
 export function searchField(api, placeholder = 'Search', onChange) {
@@ -185,6 +198,8 @@ export function searchField(api, placeholder = 'Search', onChange) {
   return h('div.searchbar', h('span.sb-ic', { html: G.search }), f.el, h('span.sb-mic', { html: MIC }));
 }
 
+export const SEARCH = G.search;
+export const DOTS = `<svg viewBox="0 0 24 24"><g fill="currentColor"><circle cx="5.5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="18.5" cy="12" r="1.9"/></g></svg>`;
 export const MIC = `<svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor"/><path d="M6 11a6 6 0 0 0 12 0M12 17v3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;
 
 // SF-symbol style glyph tiles for Settings rows.

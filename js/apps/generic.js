@@ -114,8 +114,9 @@ export function generic(id) {
         root.append(mapView());
         return {};
       }
-      const nav = navStack(h('div.gen'));
-      root.append(nav.el.parentNode);
+      const gen = h('div.gen');
+      root.append(gen);
+      const nav = navStack(gen, { api });
       const name = APPS[id]?.name || id;
       const make = CONTENT[id];
       const content = make

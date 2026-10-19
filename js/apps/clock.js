@@ -1,6 +1,7 @@
 import { h, fmtTime, tone } from '../util.js';
 import { G, iconSVG } from '../icons.js';
 import { tabBar, toggle, glassBtn } from './ui.js';
+import { G as GL } from '../icons.js';
 
 const GLOBE = `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>`;
 const ALARM = `<svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="7.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 9v4l2.5 2M4 5l3-2.5M20 5l-3-2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
@@ -42,8 +43,10 @@ export default {
       (i) => sel(i),
       3
     );
-    const wrap = h('div.clk', ...panes, bar);
+    const wrap = h('div.clk', ...panes);
     root.append(wrap);
+    api.rail.top([glassBtn(GL.plus)]);
+    api.rail.bottom([bar]);
     const sel = (i) => panes.forEach((p, j) => p.classList.toggle('on', i === j));
 
     /* World clock */

@@ -1,5 +1,5 @@
 // Offline cache so the "phone" boots instantly with no network.
-const VERSION = 'duo-v1';
+const VERSION = 'duo-v2';
 const FILES = [
   './',
   'index.html',

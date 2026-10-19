@@ -482,17 +482,18 @@ export default {
       if (nowWide === wide && (sideNav || nav)) return;
       wide = nowWide;
       root.replaceChildren();
+      api.rail.top([]);
       if (wide) {
         const side = h('div.side');
         const main = h('div.main');
         root.append(h('div.split2', side, main));
-        sideNav = navStack(side);
-        mainNav = navStack(main);
-        sideNav.reset(root$());
+        sideNav = navStack(side, { inline: true });
+        mainNav = navStack(main, { api });
+        sideNav.reset({ ...root$(), large: false });
         const first = side.querySelector('.r.tap:not(.profile)') && [...side.querySelectorAll('.r.tap')].find((r) => r.textContent.includes('General'));
         open('general', first);
       } else {
-        nav = navStack(root);
+        nav = navStack(root, { api });
         nav.reset(root$());
       }
     };

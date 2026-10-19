@@ -81,8 +81,9 @@ export default {
       3
     );
     bar.style.setProperty('--tint', '#0a84ff');
-    const wrap = h('div.phn', ...panes, bar);
+    const wrap = h('div.phn', ...panes);
     root.append(wrap);
+    api.rail.bottom([bar]);
 
     function startCall(name) {
       const st = h('div.st', 'calling…');
