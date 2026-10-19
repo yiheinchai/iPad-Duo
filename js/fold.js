@@ -43,8 +43,9 @@ export class Folder {
     os.closeMenu();
     const portrait = m.portrait;
     this.vertical = portrait; // portrait: hinge is horizontal
-    const W = portrait ? GEO.Hi : GEO.Wi;
-    const H = portrait ? GEO.Wi : GEO.Hi;
+    const d = m.d;
+    const W = d.Wi;
+    const H = d.Hi;
     this.W = W;
     this.H = H;
 
@@ -59,7 +60,7 @@ export class Folder {
     innerClone.classList.add('fold-clone');
     innerClone.removeAttribute('id');
 
-    const R = GEO.Ri;
+    const R = d.Ri;
     const root = h('div.fold-root');
     const shadeA = h('div.fold-shade-a'); // shadow cast onto the static half
     const front = h('div.face.front', innerClone, h('div.face-shade'), h('div.face-glare'));
@@ -105,14 +106,16 @@ export class Folder {
       if (!outerClone) backInner.style.borderRadius = '10px 10px 46px 46px';
       if (outerClone) {
         // Outer display is portrait; the folded stack is landscape until it turns upright.
-        Object.assign(backInner.style, { width: GEO.Wo + 'px', height: GEO.Ho + 'px', left: (W - GEO.Wo) / 2 + 'px', top: (H / 2 - GEO.Ho) / 2 + 'px', transform: 'rotate(90deg)' });
+        // (scaled down if the closed phone fills the iPad, so it fits the folded stack)
+        const s = Math.min(1, W / d.Ho, H / 2 / d.Wo);
+        Object.assign(backInner.style, { width: d.Wo + 'px', height: d.Ho + 'px', left: (W - d.Wo) / 2 + 'px', top: (H / 2 - d.Ho) / 2 + 'px', transform: `rotate(90deg) scale(${s})` });
       }
       Object.assign(shadeA.style, { left: 0, top: H / 2 + 'px', width: W + 'px', height: H / 2 + 'px', background: 'linear-gradient(to bottom, rgba(0,0,0,.9), rgba(0,0,0,.35))' });
       m.screen.style.clipPath = `inset(50% 0 0 0 round 0 0 ${R}px ${R}px)`;
     }
     if (outerClone) {
       const k = backInner;
-      if (!portrait) Object.assign(k.style, { width: GEO.Wo + 'px', height: GEO.Ho + 'px', left: '3px', top: '3px' });
+      if (!portrait) Object.assign(k.style, { width: d.Wo + 'px', height: d.Ho + 'px', left: '3px', top: '3px' });
       Object.assign(outerClone.style, { left: 0, top: 0 });
     }
     m.screen.style.pointerEvents = 'none';
@@ -200,6 +203,7 @@ export class Folder {
       m.setFolded(true);
       // The outer display wakes as the magnets catch.
       m.screen.animate([{ opacity: 0, filter: 'brightness(.4)' }, { opacity: 1, filter: 'brightness(1)' }], { duration: 380, easing: 'ease-out' });
+
     } else {
       m.setFolded(false);
       if (this.dir === 'open') tick(0.2);
@@ -209,6 +213,12 @@ export class Folder {
   async toggle() {
     if (this.busy) return;
     const closing = !this.m.folded;
+    const m = this.m;
+    if (!closing && m.d.fillsClosed) {
+      // Edge-to-edge outer display: dim it into the folded phone before the cover swings open.
+      await m.screen.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, easing: 'ease-in', fill: 'forwards' }).finished;
+      m.screen.getAnimations().forEach((a) => a.cancel());
+    }
     if (!this.begin(closing ? 'close' : 'open')) return;
     await this.run(closing ? 1 : 0);
   }

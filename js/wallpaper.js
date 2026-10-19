@@ -44,7 +44,8 @@ const THEMES = {
   },
 };
 
-export function makeWallpaper(name = 'duo', size = 1600) {
+export function makeWallpaper(name = 'dunes', size = 1600) {
+  if (name === 'dunes') return paintDunes(size);
   if (name === 'duo') return paintDuo(size);
   const t = THEMES[name] || THEMES.nightsky;
   const S = 160;
@@ -109,6 +110,113 @@ export function makeWallpaper(name = 'duo', size = 1600) {
   }
   bc.putImageData(img, 0, 0);
   return big.toDataURL('image/jpeg', 0.9);
+}
+
+// iPhone Duo launch wallpaper: hazy desert mountains over soft sand dunes, warm dusk sky.
+// Composed on a square so both landscape (inner) and portrait (outer) crops keep the horizon.
+function paintDunes(S) {
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = S;
+  const c = cv.getContext('2d');
+  const u = (v) => v * S;
+  const rnd = mulberry(20260909);
+
+  const sky = c.createLinearGradient(0, 0, 0, u(0.56));
+  sky.addColorStop(0, '#6f8597');
+  sky.addColorStop(0.35, '#9eaab0');
+  sky.addColorStop(0.7, '#d2c8b8');
+  sky.addColorStop(1, '#ead5b6');
+  c.fillStyle = sky;
+  c.fillRect(0, 0, S, S);
+  const glow = c.createRadialGradient(u(0.62), u(0.5), 0, u(0.62), u(0.5), u(0.45));
+  glow.addColorStop(0, 'rgba(255,236,206,.55)');
+  glow.addColorStop(1, 'rgba(255,236,206,0)');
+  c.fillStyle = glow;
+  c.fillRect(0, 0, S, S);
+
+  // Fractal ridge lines (midpoint displacement).
+  const ridge = (y0, amp, rough, seedShift) => {
+    let pts = [[0, y0 + (rnd() - 0.5) * amp], [1, y0 + (rnd() - 0.5) * amp]];
+    let a = amp;
+    for (let it = 0; it < 9; it++) {
+      const next = [];
+      for (let i = 0; i < pts.length - 1; i++) {
+        const [x1, y1] = pts[i];
+        const [x2, y2] = pts[i + 1];
+        next.push(pts[i], [(x1 + x2) / 2, (y1 + y2) / 2 + (rnd() - 0.5) * a]);
+      }
+      next.push(pts[pts.length - 1]);
+      pts = next;
+      a *= rough;
+    }
+    void seedShift;
+    return pts;
+  };
+  const ranges = [
+    [0.44, 0.12, 0.5, '#a99d90', '#d6c5ad'],
+    [0.5, 0.15, 0.52, '#6f6157', '#b29d86'],
+  ];
+  for (const [y, amp, rough, top, bottom] of ranges) {
+    const pts = ridge(y, amp, rough);
+    c.beginPath();
+    c.moveTo(0, S);
+    for (const [x, yy] of pts) c.lineTo(u(x), u(yy));
+    c.lineTo(S, S);
+    c.closePath();
+    const g = c.createLinearGradient(0, u(y - amp), 0, u(y + 0.14));
+    g.addColorStop(0, top);
+    g.addColorStop(1, bottom);
+    c.fillStyle = g;
+    c.fill();
+    // light haze between ranges
+    const hz = c.createLinearGradient(0, u(y), 0, u(y + 0.1));
+    hz.addColorStop(0, 'rgba(234,213,182,0)');
+    hz.addColorStop(1, 'rgba(234,213,182,.28)');
+    c.fillStyle = hz;
+    c.fillRect(0, u(y), S, u(0.1));
+  }
+
+  // Sand dunes: smooth crests, lit faces and soft shadow troughs.
+  const dune = (y0, pts, lit, shade, base) => {
+    c.beginPath();
+    c.moveTo(u(-0.05), u(y0));
+    for (const [cx1, cy1, cx2, cy2, x, y] of pts) c.bezierCurveTo(u(cx1), u(cy1), u(cx2), u(cy2), u(x), u(y));
+    c.lineTo(u(1.05), u(1.05));
+    c.lineTo(u(-0.05), u(1.05));
+    c.closePath();
+    const g = c.createLinearGradient(0, u(y0 - 0.06), 0, u(1));
+    g.addColorStop(0, lit);
+    g.addColorStop(0.35, base);
+    g.addColorStop(1, shade);
+    c.save();
+    c.shadowColor = 'rgba(80,60,40,.35)';
+    c.shadowBlur = u(0.02);
+    c.shadowOffsetY = -u(0.004);
+    c.fillStyle = g;
+    c.fill();
+    c.restore();
+  };
+  dune(0.62, [[0.2, 0.57, 0.4, 0.6, 0.55, 0.6], [0.72, 0.6, 0.85, 0.57, 1.05, 0.63]], '#ecdcc2', '#c6ad8c', '#dfcaa9');
+  dune(0.72, [[0.25, 0.64, 0.5, 0.74, 0.7, 0.69], [0.85, 0.66, 0.95, 0.66, 1.05, 0.7]], '#f1e3cb', '#bea383', '#dcc6a6');
+  dune(0.86, [[0.3, 0.77, 0.55, 0.92, 0.78, 0.82], [0.9, 0.78, 1.0, 0.8, 1.05, 0.84]], '#f3e6d0', '#b49a7b', '#d6bf9d');
+  // soft side-light shading across the sand
+  const side = c.createLinearGradient(0, 0, S, 0);
+  side.addColorStop(0, 'rgba(90,70,50,.18)');
+  side.addColorStop(0.5, 'rgba(255,240,215,.05)');
+  side.addColorStop(1, 'rgba(90,70,50,.12)');
+  c.fillStyle = side;
+  c.fillRect(0, u(0.58), S, u(0.42));
+
+  const img = c.getImageData(0, 0, S, S);
+  const d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const n = (Math.random() - 0.5) * 6;
+    d[i] += n;
+    d[i + 1] += n;
+    d[i + 2] += n;
+  }
+  c.putImageData(img, 0, 0);
+  return cv.toDataURL('image/jpeg', 0.9);
 }
 
 // iPhone Duo default: dark slate silk with flowing, softly lit folds.

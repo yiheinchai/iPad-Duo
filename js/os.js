@@ -119,7 +119,7 @@ export class OS {
     const t = fmtTime(now, this.cfg.h24);
     this.status.querySelector('.st-time').textContent = t;
     this.lockClock.textContent = t;
-    this.lockDate.textContent = fmtDate(now);
+    this.lockDate.textContent = [fmtDate(now, { weekday: 'short' }), fmtDate(now, { month: 'short' }), now.getDate()].join(' ');
     this.updateBattery();
     for (const fn of this.onMinute) {
       try {

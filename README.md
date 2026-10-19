@@ -24,10 +24,11 @@ No build step and no dependencies. It's plain HTML, CSS and JavaScript, and it w
 
 ### Making it airtight
 
-- **Hide the iPad's own status bar.** The page goes fullscreen on your first tap where iPadOS allows it. This is on by default and can be turned off in the hidden setup. In plain Safari you can also use the **Fullscreen** button in the hidden setup.
-- **Block iPad gestures.** Turn on **Guided Access** (Settings → Accessibility → Guided Access) and triple‑click the top button to start it. Friends then can't swipe out to the real iPadOS.
-- **Keep the screen on.** The app requests a screen wake lock. You can also set Auto‑Lock to *Never* on the iPad.
-- When the iPad wakes from sleep, the app shows the iPhone Duo Lock Screen, just like a real phone.
+- **Edge to edge.** By default the phone fills the whole iPad mini screen with no black border. The open phone fills it in landscape or portrait, and the closed phone fills it when the iPad is upright. "True iPhone Duo size" in the hidden setup brings back the exact real‑world dimensions.
+- **Hide the iPad status bar.** Only iPadOS fullscreen can hide it; a web page can't remove it any other way. The app asks for fullscreen on your first tap. This always works in **Safari**: open the link, tap once, and the address bar and status bar disappear. If your Home Screen app still shows the iPad clock and battery, use Safari instead.
+- **Block iPad gestures.** Turn on **Guided Access** (Settings → Accessibility → Guided Access) and triple‑click the top button to start it, so friends can't swipe out to the real iPadOS.
+- **Keep the screen on.** Set Auto‑Lock to *Never*; the app also asks for a screen wake lock.
+- When the iPad wakes from sleep, the app shows the iPhone Duo Lock Screen, like a real phone.
 
 ## Controls
 

@@ -49,7 +49,9 @@ html, body {
   background: #000;
   isolation: isolate;
   font-size: 17px;
-  letter-spacing: -0.2px;
+  letter-spacing: normal;
+  font-kerning: normal;
+  text-rendering: optimizeLegibility;
 }
 .screen * { -webkit-user-select: none; user-select: none; }
 
@@ -183,7 +185,7 @@ html, body {
   right: calc(var(--rc) - 32px); width: 64px; top: 74px;
   text-align: center;
   font: 600 16px/18px var(--font);
-  letter-spacing: -0.3px;
+  letter-spacing: 0;
   font-variant-numeric: tabular-nums;
 }
 .inner .st-time { top: 38px; }
@@ -274,29 +276,30 @@ html, body {
 /* ---------------------------------------------------------- lock screen */
 
 .lock-inner { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; }
-.lock-pad { margin-top: 26px; width: 18px; height: 18px; opacity: 0; }
+.lock-pad { position: absolute; top: 20px; width: 18px; height: 18px; opacity: 0; }
 .outer .lock-pad { margin-top: 64px; }
 .lock-pad svg { width: 100%; height: 100%; display: block; }
 .lock-pad.nudge { animation: nudge 0.45s; }
 @keyframes nudge { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
-.lock-date { margin-top: 10px; font: 600 21px/1.1 var(--font); letter-spacing: -0.1px; color: rgba(255, 255, 255, 0.92); text-shadow: 0 1px 8px rgba(0, 0, 0, 0.12); }
+.lock-date { position: absolute; top: 44px; left: 0; right: 0; text-align: center; font: 600 18px/22px var(--font); letter-spacing: -0.1px; color: rgba(255, 255, 255, 0.92); text-shadow: 0 1px 8px rgba(0, 0, 0, 0.12); }
+/* iOS 27's tall, narrow Lock Screen clock (≈180 px tall, ≈245 px wide on both displays). */
 .lock-clock {
-  margin-top: 4px;
-  font: 600 128px/1 var(--display);
-  font-stretch: condensed;
-  letter-spacing: -3px;
-  transform: scaleY(1.32);
+  position: absolute; top: 40px; left: 0; right: 0;
+  text-align: center;
+  font: 400 116px/1 var(--display);
+  letter-spacing: -1px;
+  transform: scaleY(2.2);
   transform-origin: 50% 0;
   font-variant-numeric: tabular-nums;
   color: rgba(255, 255, 255, 0.86);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.74));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(255, 255, 255, 0.82));
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   filter: drop-shadow(0 2px 14px rgba(0, 0, 0, 0.12));
 }
-.outer .lock-clock { font-size: 104px; letter-spacing: -2.5px; }
-.inner .lock-clock { font-size: 148px; }
+.outer .lock-date { top: 42px; }
+.outer .lock-clock { top: 37px; }
 .lock-notifs { position: absolute; bottom: 64px; left: 50%; width: 400px; margin-left: -200px; display: grid; }
 .outer .lock-notifs { width: calc(100% - var(--rail) - 22px); left: 18px; margin-left: 0; bottom: 30px; }
 .notif {
@@ -358,9 +361,10 @@ html, body {
   justify-items: center;
   align-items: start;
 }
-.wide .panel.right .grid { left: 14px; }
+.wide .panel.right .grid { left: calc((var(--W) / 2 - var(--rail) - 376px) / 2); }
 .wide .panel:not(.right) .grid { left: calc((var(--W) / 2 - 376px) / 2); }
-.inner.portrait .grid { left: calc((var(--W) - var(--rail) - 376px) / 2); top: 60px; }
+.outer .grid { grid-auto-rows: calc((var(--H) - 78px) / 6); }
+.inner.portrait .grid { left: 20px; top: 60px; grid-template-columns: repeat(4, calc((var(--W) - var(--rail) - 40px) / 4)); grid-auto-rows: 118px; }
 .app { display: flex; flex-direction: column; align-items: center; gap: 6px; position: relative; margin-top: 20.8px; transition: transform 0.18s; }
 .icon {
   --s: 64px;
@@ -379,12 +383,12 @@ html, body {
   box-shadow: inset 0 1px 1.2px rgba(255, 255, 255, 0.55), inset 0 -1px 1.5px rgba(0, 0, 0, 0.1), inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
 }
 .app.pressed .icon, .pressed > .icon { filter: brightness(0.72); }
-.label { font: 500 12px/14px var(--font); letter-spacing: -0.05px; color: #fff; text-shadow: 0 0.5px 2px rgba(0, 0, 0, 0.3); white-space: nowrap; }
+.label { font: 500 12px/14px var(--font); letter-spacing: 0; color: #fff; text-shadow: 0 0 1px rgba(0, 0, 0, 0.25), 0 1px 4px rgba(0, 0, 0, 0.45); white-space: nowrap; }
 @keyframes icon-rot { to { transform: rotate(360deg); } }
 
 .wcell { grid-column: span 2; grid-row: span 2; display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 23px; }
 .wcell.w-M { grid-column: span 4; }
-.wlabel { font: 500 12px/14px var(--font); color: #fff; text-shadow: 0 0.5px 2px rgba(0, 0, 0, 0.3); }
+.wlabel { font: 500 12px/14px var(--font); color: #fff; text-shadow: 0 0 1px rgba(0, 0, 0, 0.25), 0 1px 4px rgba(0, 0, 0, 0.45); }
 
 .dock {
   position: absolute; right: calc(var(--rc) - 37px); top: 250px;
@@ -412,7 +416,7 @@ html, body {
 .home-search svg, .rb svg { width: 22px; height: 22px; }
 .home-search.pressed { filter: brightness(1.4); }
 .page-dots { position: absolute; left: 205.5px; bottom: 16.5px; transform: translateX(-50%); display: flex; gap: 11px; pointer-events: none; transition: opacity 0.25s; }
-.wide .page-dots { left: calc(var(--W) / 2 + 202px); bottom: 34px; }
+.wide .page-dots { left: calc(var(--W) * 0.75 - var(--rail) / 2); bottom: 34px; }
 .inner.portrait .page-dots { left: calc((var(--W) - var(--rail)) / 2); bottom: 34px; }
 .page-dots i { width: 7px; height: 7px; border-radius: 50%; background: rgba(255, 255, 255, 0.38); }
 .page-dots i.on { background: #fff; }

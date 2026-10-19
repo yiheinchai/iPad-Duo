@@ -31,9 +31,9 @@ function guessCarrier() {
 }
 
 const DEFAULTS = {
-  size: 'true',
+  size: 'fill',
   color: 'nightsky',
-  wallpaper: 'duo',
+  wallpaper: 'dunes',
   carrier: guessCarrier(),
   owner: 'Your Name',
   deviceName: 'iPhone',
@@ -50,6 +50,14 @@ const DEFAULTS = {
 class Main {
   constructor() {
     this.cfg = { ...DEFAULTS, ...store.get('cfg', {}) };
+    // v2: edge-to-edge became the default; move earlier installs over once.
+    const v = store.get('cfgVersion', 1);
+    if (v < 3) {
+      this.cfg.size = 'fill';
+      if (this.cfg.wallpaper !== 'custom') this.cfg.wallpaper = 'dunes';
+      store.set('cfgVersion', 3);
+      this.save();
+    }
     this.stage = $('#stage');
     this.device = h('div');
     this.device.id = 'device';
@@ -80,7 +88,7 @@ class Main {
   async applyWallpaper() {
     let url;
     if (this.cfg.wallpaper === 'custom') url = await idb.get('wallpaper');
-    if (!url) url = makeWallpaper(this.cfg.wallpaper === 'custom' ? 'duo' : this.cfg.wallpaper);
+    if (!url) url = makeWallpaper(this.cfg.wallpaper === 'custom' ? 'dunes' : this.cfg.wallpaper);
     this.os.setWallpaper(url);
   }
 
@@ -101,23 +109,51 @@ class Main {
     this.vw = innerWidth;
     this.vh = innerHeight;
     this.portrait = this.vh > this.vw * 1.05;
-    const iw = this.portrait ? GEO.Hi : GEO.Wi;
-    const ih = this.portrait ? GEO.Wi : GEO.Hi;
-    let k = Math.min(this.vw / iw, this.vh / ih);
-    if (this.cfg.size === 'true') k = Math.min(k, 1);
-    this.k = k;
+    this.d = this.dims();
+    this.k = this.folded ? this.d.ko ?? this.d.k : this.d.k;
+    this.stage.classList.toggle('fill', this.cfg.size === 'fill');
     this.setFolded(this.folded, true);
+  }
+
+  // Display geometry for the current orientation. "fill" makes the inner display the whole iPad
+  // screen (square corners: the iPad's own rounded glass does the rounding); "true" draws the
+  // iPhone Duo at its real 7.6" / 5.4" size.
+  dims() {
+    const { vw, vh, portrait } = this;
+    if (this.cfg.size === 'fill') {
+      // Scale the iPhone Duo's own layout (718 pt across the short side) so it covers the iPad.
+      const k = (portrait ? vw : vh) / GEO.Hi;
+      // Closed, held upright: the 5.4" outer layout (496 pt wide) blown up to fill the screen.
+      const ko = vw / GEO.Wo;
+      return {
+        Wi: vw / k,
+        Hi: vh / k,
+        Ri: 0,
+        Wo: portrait ? GEO.Wo : vw / k / 2 - 6,
+        Ho: portrait ? vh / ko : vh / k - 6,
+        Ro: portrait ? 0 : '13px 49px 49px 13px',
+        k,
+        ko: portrait ? ko : k,
+        fillsClosed: portrait,
+      };
+    }
+    const Wi = portrait ? GEO.Hi : GEO.Wi;
+    const Hi = portrait ? GEO.Wi : GEO.Hi;
+    const k = Math.min(1, vw / Wi, vh / Hi);
+    return { Wi, Hi, Ri: GEO.Ri, Wo: GEO.Wo, Ho: GEO.Ho, Ro: GEO.Ro, k };
   }
 
   setFolded(folded, silent) {
     this.folded = folded;
     store.set('folded', folded);
-    if (folded) this.os.setGeometry({ W: GEO.Wo, H: GEO.Ho, R: GEO.Ro, mode: 'outer', portrait: false });
+    const d = this.d;
+    this.k = folded ? d.ko ?? d.k : d.k;
+    if (folded) this.os.setGeometry({ W: d.Wo, H: d.Ho, R: d.Ro, mode: 'outer', portrait: false });
     else
       this.os.setGeometry({
-        W: this.portrait ? GEO.Hi : GEO.Wi,
-        H: this.portrait ? GEO.Wi : GEO.Hi,
-        R: GEO.Ri,
+        W: d.Wi,
+        H: d.Hi,
+        R: d.Ri,
         mode: 'inner',
         portrait: this.portrait,
       });
@@ -184,7 +220,7 @@ class Main {
           return;
         }
         e.preventDefault();
-        const span = GEO.Wi * 0.5 * this.k;
+        const span = (vertical ? this.d.Hi : this.d.Wi) * 0.5 * this.k;
         const dd = (vertical ? y - tf.y0 : x - tf.x0) / span;
         const p = tf.dir === 'close' ? clamp(dd, 0, 1) : clamp(1 + dd, 0, 1);
         tf.samples.push({ t: e.timeStamp, p });
@@ -288,18 +324,27 @@ class Main {
     });
     this.wakeLock();
     // Fullscreen hides the iPad status bar in Safari.
+    // iPadOS only grants fullscreen inside a real tap (touchend / click), not pointerup.
     const fs = () => {
       if (!this.cfg.autoFullscreen) return;
-      const d = document.documentElement;
-      if (document.fullscreenElement || document.webkitFullscreenElement) return;
-      try {
-        (d.requestFullscreen || d.webkitRequestFullscreen)?.call(d)?.catch?.(() => {});
-      } catch {}
+      this.enterFullscreen();
     };
-    addEventListener('pointerup', fs, true);
+    addEventListener('touchend', fs, true);
+    addEventListener('click', fs, true);
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
       navigator.serviceWorker.register('sw.js').catch(() => {});
     }
+  }
+
+  enterFullscreen() {
+    const d = document.documentElement;
+    if (document.fullscreenElement || document.webkitFullscreenElement) return;
+    const req = d.requestFullscreen || d.webkitRequestFullscreen || d.webkitEnterFullscreen;
+    if (!req) return;
+    try {
+      const r = req.call(d, { navigationUI: 'hide' });
+      r?.catch?.(() => {});
+    } catch {}
   }
 
   isStandalone() {
@@ -430,8 +475,7 @@ class Main {
           this.os.lock();
         }),
         btn('Fullscreen', () => {
-          const d = document.documentElement;
-          (d.requestFullscreen || d.webkitRequestFullscreen)?.call(d);
+          this.enterFullscreen();
           close();
         })
       ),
@@ -447,15 +491,16 @@ class Main {
       field('Caller name', 'callName'),
       h('h3', 'Device'),
       select('Display size', 'size', [
-        ['true', 'True iPhone Duo size (iPad mini)'],
-        ['fill', 'Fill the iPad screen'],
+        ['fill', 'Edge to edge (fills the iPad)'],
+        ['true', 'True iPhone Duo size (black border)'],
       ], () => this.layout()),
       select('Finish', 'color', [
         ['nightsky', 'Night Sky'],
         ['starwhite', 'Star White'],
       ], (v) => (this.stage.dataset.color = v)),
       select('Wallpaper', 'wallpaper', [
-        ['duo', 'iPhone Duo (default)'],
+        ['dunes', 'Desert (default)'],
+        ['duo', 'Slate'],
         ['nightsky', 'Night Sky'],
         ['sunset', 'Sunset'],
         ['starwhite', 'Star White'],
