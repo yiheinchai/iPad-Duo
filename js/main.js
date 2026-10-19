@@ -479,6 +479,7 @@ class Main {
     const box = h(
       'div.duo-panel',
       h('h2', 'Hidden setup'),
+      h('p.small', `Window ${innerWidth}×${innerHeight} · Screen ${screen.width}×${screen.height} · Drawn ${this.vw}×${this.vh} · ${this.isStandalone() ? 'Home Screen app' : 'Safari'}${document.fullscreenElement || document.webkitFullscreenElement ? ' (fullscreen)' : ''}`),
       h('p.small', 'Only you can open this (hold the black border). Actions marked “in 5 s” give you time to hand the phone over.'),
       h(
         'div.btns',
