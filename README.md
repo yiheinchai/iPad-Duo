@@ -17,10 +17,8 @@ No build step and no dependencies. It's plain HTML, CSS and JavaScript, and it w
 
 ## Put it on your iPad
 
-1. Host the folder over **HTTPS**. Safari needs HTTPS for the camera and offline mode.
-   - **GitHub Pages:** in the repo go to Settings → Pages → Source: **GitHub Actions**. Merge to `main` and the included workflow publishes the site.
-   - Any other static host works too (Netlify, Vercel, Cloudflare Pages…).
-2. On the iPad mini, open the URL in **Safari**, then go to **Share → Add to Home Screen**.
+1. It's live at **https://yiheinchai.com/ipad-duo/**. It's published from the `public/ipad-duo/` folder of `yiheinchai/yiheinchai.github.io`, so copy changes from here into that folder to update it. Any other static HTTPS host works too. Safari needs HTTPS for the camera and offline mode.
+2. On the iPad mini, open that URL in **Safari**, then go to **Share → Add to Home Screen**.
 3. Launch it from the Home Screen in **landscape**.
 4. Open the Camera app once and allow camera access, so friends never see the permission prompt.
 
